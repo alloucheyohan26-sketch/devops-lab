@@ -1,6 +1,10 @@
 /**
- * GET /version → { version: "<package.json version>" }
+ * GET /version -> { version: "<package.json version>" }
  * Reads version from package.json to keep it source-of-truth.
+ *
+ * DEVOPS-17: Implement /version endpoint
+ * - Returns the current application version from package.json
+ * - Ensures the API exposes version info for monitoring and debugging
  */
 import { Router } from 'express'
 import fs from 'node:fs'
