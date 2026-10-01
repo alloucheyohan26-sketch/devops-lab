@@ -1,6 +1,10 @@
 /**
- * GET /info → merges two small helpers for easy unit testing.
+ * GET /info -> merges two small helpers for easy unit testing.
  * Returns: { name, version, node, uptime }
+ *
+ * DEVOPS-18: Implement /info endpoint
+ * - Combines package info and runtime info into a single response
+ * - Uses utility helpers for testability
  */
 import { Router } from 'express'
 import { getPackageInfo, getRuntimeInfo } from '../../utils/appInfo.js'

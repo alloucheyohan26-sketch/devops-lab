@@ -1,6 +1,10 @@
 /**
  * Small helpers used by /info.
  * Keeping logic here makes unit tests simple and fast.
+ *
+ * DEVOPS-18: Runtime and package info utilities
+ * - getPackageInfo(): reads name and version from package.json
+ * - getRuntimeInfo(): returns Node.js version and process uptime
  */
 import fs from 'node:fs'
 import path from 'node:path'
