@@ -10,8 +10,12 @@ import { errorHandler } from './utils/errorHandler.js'
 import versionRouter from './routes/auto/version.route.js'
 import infoRouter from './routes/auto/info.route.js'
 import boomRouter from './routes/auto/boom.route.js'
+import doctorsRouter from './routes/auto/doctors.route.js'
 
 const app = express()
+
+// Parse JSON bodies before handling requests
+app.use(express.json())
 
 // Simple root + health endpoints
 app.get('/', (_req, res) => res.json({ ok: true, message: 'Hello from CI/CD demo \u{1F44B}' }))
@@ -21,6 +25,7 @@ app.get('/health', (_req, res) => res.status(200).send('OK'))
 app.use('/', versionRouter)
 app.use('/', infoRouter)
 app.use('/', boomRouter)
+app.use('/api/doctors', doctorsRouter)
 
 // Global error middleware last
 app.use(errorHandler)
