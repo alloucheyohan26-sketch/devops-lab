@@ -32,6 +32,20 @@ Open `coverage/index.html` for a visual coverage report (locally).
 - `GET /version` – returns `{ version }` from `package.json`
 - `GET /info` – returns `{ name, version, node, uptime }`
 - `GET /boom` – triggers an error to test the global error handler
+- `GET /api/patients` – list all patients (optional filter `?minAge=40`)
+- `GET /api/patients/:id` – one patient (404 if unknown)
+- `POST /api/patients` – add a patient `{ "name": "Marie", "age": 29 }` → 201 (400 if a field is missing or invalid)
+
+### Healthcare data (Lab 5)
+
+Doctors, patients and appointments live in memory in `src/data/store.js` (reset on every restart).
+Import these shared arrays and helpers in your route instead of declaring local ones, so all routes share the same data:
+
+```js
+import { doctors, nextId, findById } from '../../data/store.js'
+```
+
+JavaScript practice (Lab 5, part 2): `node js-practice.js` and `node main.js`.
 
 Routes are **auto-mounted** from `src/routes/auto/*.route.js` so each student can add a file without touching `src/app.js` (fewer merge conflicts).
 

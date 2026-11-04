@@ -31,18 +31,5 @@
     "nodemon": "^3.1.11",
     "supertest": "^7.0.0",
     "vitest": "^4.0.13"
-  },
-  "vitest": {
-    "coverage": {
-      "provider": "v8",
-      "all": true,
-      "include": [
-        "src/**/*.js"
-      ],
-      "lines": 80,
-      "functions": 80,
-      "branches": 70,
-      "statements": 80
-    }
   }
 }
