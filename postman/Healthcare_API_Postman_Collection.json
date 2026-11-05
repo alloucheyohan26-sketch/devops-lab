@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "8e4c19a4-5d12-47d8-9b3a-7f4e2a10c905",
     "name": "Healthcare API Tests",
-    "description": "Automated Postman test collection for Healthcare REST API - Doctors Route (Lab 5)",
+    "description": "Automated Postman test collection for Healthcare REST API - Doctors and Patients routes (Lab 5)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -126,6 +126,237 @@
           "host": ["localhost"],
           "port": "3000",
           "path": ["api", "doctors"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/patients",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Response is an array\", function () {",
+              "    pm.expect(pm.response.json()).to.be.an(\"array\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/patients",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "patients"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/patients",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 201\", function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test(\"Created patient has an id, name and age\", function () {",
+              "    const patient = pm.response.json();",
+              "    pm.expect(patient).to.have.property(\"id\");",
+              "    pm.expect(patient.name).to.eql(\"Marie\");",
+              "    pm.expect(patient.age).to.eql(29);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Marie\",\n  \"age\": 29\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/patients",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "patients"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/patients (Missing field)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 400 Bad Request\", function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "pm.test(\"Error message is returned\", function () {",
+              "    pm.expect(pm.response.json()).to.have.property(\"error\", \"Missing fields\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"age\": 40\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/patients",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "patients"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/patients?minAge=40",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Every patient is older than 40\", function () {",
+              "    const list = pm.response.json();",
+              "    pm.expect(list).to.be.an(\"array\").that.is.not.empty;",
+              "    list.forEach((p) => pm.expect(p.age).to.be.above(40));",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/patients?minAge=40",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "patients"],
+          "query": [
+            {
+              "key": "minAge",
+              "value": "40"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/patients/1",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Returns the patient with id 1\", function () {",
+              "    pm.expect(pm.response.json().id).to.eql(1);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/patients/1",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "patients", "1"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/patients/999 (Not found)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 404 Not Found\", function () {",
+              "    pm.response.to.have.status(404);",
+              "});",
+              "",
+              "pm.test(\"Error message is returned\", function () {",
+              "    pm.expect(pm.response.json()).to.have.property(\"error\", \"Patient not found\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/patients/999",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "patients", "999"]
         }
       },
       "response": []
