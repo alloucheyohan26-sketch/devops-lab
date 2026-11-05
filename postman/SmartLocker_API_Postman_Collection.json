@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "8f2a9c41-5b19-4d83-9b14-7c62e84a9102",
     "name": "SmartLocker REST API - Lab 6 (Users & Notifications CRUD)",
-    "description": "Full CRUD Postman Collection for SmartLocker Entities assigned to Antonin Charron:\n- Entity 1: Users (/api/users) - Jira SMAR-42\n- Entity 2: Notifications (/api/notifications) - Jira SMAR-37\n- Reservations (/api/reservations) - Jira SMAR-24 (Marc Chen)\n- Management (/api/management) - Jira SMAR-19 (Marc Chen)",
+    "description": "Full CRUD Postman Collection for SmartLocker Entities assigned to Antonin Charron:\n- Entity 1: Users (/api/users) - Jira SMAR-42\n- Entity 2: Notifications (/api/notifications) - Jira SMAR-37\n- Management (/api/management) - Jira SMAR-19 (Marc Chen)\n- Reservations (/api/reservations) - Jira SMAR-24 (Marc Chen)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -505,11 +505,16 @@
                   "pm.test('Status code is 201 Created', function () {",
                   "    pm.response.to.have.status(201);",
                   "});",
-                  "pm.test('Created reservation is HELD for locker 4', function () {",
+                  "pm.test('Booking is created with status PENDING_PAYMENT', function () {",
                   "    const jsonData = pm.response.json();",
                   "    pm.expect(jsonData).to.have.property('id');",
                   "    pm.expect(jsonData.locker_id).to.eql(4);",
-                  "    pm.expect(jsonData.status).to.eql('HELD');",
+                  "    pm.expect(jsonData.status).to.eql('PENDING_PAYMENT');",
+                  "});",
+                  "pm.test('Locker is held for 15 minutes (countdown)', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('hold_expires_at');",
+                  "    pm.expect(jsonData.hold_remaining_seconds).to.be.within(1, 900);",
                   "    pm.collectionVariables.set('reservationId', jsonData.id);",
                   "});"
                 ],
@@ -632,7 +637,7 @@
           }
         },
         {
-          "name": "PUT Update Reservation (/api/reservations/103)",
+          "name": "PUT Confirm Reservation after payment (/api/reservations/{{reservationId}})",
           "event": [
             {
               "listen": "test",
@@ -641,10 +646,10 @@
                   "pm.test('Status code is 200 OK', function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
-                  "pm.test('Reservation 103 is now CONFIRMED', function () {",
+                  "pm.test('Paid booking is CONFIRMED and the countdown stops', function () {",
                   "    const jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.id).to.eql(103);",
                   "    pm.expect(jsonData.status).to.eql('CONFIRMED');",
+                  "    pm.expect(jsonData.hold_remaining_seconds).to.eql(null);",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -664,7 +669,7 @@
               "raw": "{\n  \"status\": \"CONFIRMED\"\n}"
             },
             "url": {
-              "raw": "http://localhost:3000/api/reservations/103",
+              "raw": "http://localhost:3000/api/reservations/{{reservationId}}",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -673,7 +678,7 @@
               "path": [
                 "api",
                 "reservations",
-                "103"
+                "{{reservationId}}"
               ]
             }
           }
@@ -1086,11 +1091,11 @@
   ],
   "variable": [
     {
-      "key": "reservationId",
+      "key": "managementId",
       "value": ""
     },
     {
-      "key": "managementId",
+      "key": "reservationId",
       "value": ""
     }
   ]

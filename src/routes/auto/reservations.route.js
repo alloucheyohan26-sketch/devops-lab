@@ -1,22 +1,32 @@
 /**
  * Reservations API (SmartLocker) - full CRUD
  * Jira SMAR-24 - US2.3 Hold and book a locker
- * A renter first holds a locker (HELD), then the booking is CONFIRMED.
+ * "As a renter, I want to select a locker and a rental period and have it held
+ *  during checkout, so that nobody takes it before I pay."
+ *
  * GET    /api/reservations      → list all reservations
  * GET    /api/reservations/:id  → one reservation (404 if unknown)
- * POST   /api/reservations      → create { locker_id, user_id, start_time, end_time, status? }
- * PUT    /api/reservations/:id  → update (partial body accepted)
+ * POST   /api/reservations      → create { locker_id, user_id, start_time, end_time }
+ * PUT    /api/reservations/:id  → update (partial body accepted), e.g. { status: 'CONFIRMED' } once paid
  * DELETE /api/reservations/:id  → delete (204)
  *
- * Rules: end_time must be after start_time, and an active reservation
- * (HELD or CONFIRMED) cannot overlap another one on the same locker (409).
+ * Acceptance criteria:
+ *  - a new booking is created with status PENDING_PAYMENT (the status sent by the client is ignored)
+ *  - the locker is held for 15 minutes: hold_expires_at + hold_remaining_seconds (for the countdown)
+ *  - the hold is released automatically after 15 minutes: status becomes EXPIRED
+ *  - two overlapping active bookings (PENDING_PAYMENT or CONFIRMED) on the same locker → 409
  */
 import express from 'express'
 
 const router = express.Router()
 
-const STATUSES = ['HELD', 'CONFIRMED', 'CANCELLED', 'COMPLETED']
-const ACTIVE_STATUSES = ['HELD', 'CONFIRMED']
+export const HOLD_MINUTES = 15
+const HOLD_MS = HOLD_MINUTES * 60 * 1000
+
+const STATUSES = ['PENDING_PAYMENT', 'CONFIRMED', 'CANCELLED', 'COMPLETED', 'EXPIRED']
+const ACTIVE_STATUSES = ['PENDING_PAYMENT', 'CONFIRMED']
+
+const holdUntil = (fromMs) => new Date(fromMs + HOLD_MS).toISOString()
 
 // Ids 101-103 match the reservation_id values used by /api/notifications
 let reservations = [
@@ -26,7 +36,8 @@ let reservations = [
     user_id: 1,
     start_time: '2025-03-01T08:00:00.000Z',
     end_time: '2025-03-01T18:00:00.000Z',
-    status: 'CONFIRMED'
+    status: 'CONFIRMED',
+    hold_expires_at: null
   },
   {
     id: 102,
@@ -34,7 +45,8 @@ let reservations = [
     user_id: 2,
     start_time: '2025-03-01T09:00:00.000Z',
     end_time: '2025-03-01T12:00:00.000Z',
-    status: 'CONFIRMED'
+    status: 'CONFIRMED',
+    hold_expires_at: null
   },
   {
     id: 103,
@@ -42,13 +54,33 @@ let reservations = [
     user_id: 1,
     start_time: '2025-03-01T10:00:00.000Z',
     end_time: '2025-03-02T10:00:00.000Z',
-    status: 'HELD'
+    status: 'PENDING_PAYMENT',
+    hold_expires_at: holdUntil(Date.now())
   }
 ]
 
 const isPositiveInteger = (value) => Number.isInteger(Number(value)) && Number(value) > 0
 const toDate = (value) => new Date(value)
 const isValidDate = (value) => typeof value === 'string' && !Number.isNaN(toDate(value).getTime())
+
+// Release every hold older than 15 minutes (run before each request)
+function releaseExpiredHolds () {
+  const now = Date.now()
+  for (const r of reservations) {
+    if (r.status === 'PENDING_PAYMENT' && toDate(r.hold_expires_at).getTime() <= now) {
+      r.status = 'EXPIRED'
+      r.hold_expires_at = null
+    }
+  }
+}
+
+// What the API returns: the stored reservation + the countdown in seconds
+const present = (r) => ({
+  ...r,
+  hold_remaining_seconds: r.status === 'PENDING_PAYMENT'
+    ? Math.max(0, Math.ceil((toDate(r.hold_expires_at).getTime() - Date.now()) / 1000))
+    : null
+})
 
 // Returns an error message, or null when the reservation is valid
 function validate (reservation) {
@@ -92,14 +124,21 @@ const normalise = (r) => ({
   user_id: Number(r.user_id),
   start_time: toDate(r.start_time).toISOString(),
   end_time: toDate(r.end_time).toISOString(),
-  status: r.status
+  status: r.status,
+  hold_expires_at: r.status === 'PENDING_PAYMENT' ? r.hold_expires_at : null
 })
 
 const findIndexById = (id) => reservations.findIndex((r) => r.id === Number(id))
 
+// Holds are released before any request reads or changes the data
+router.use((_req, _res, next) => {
+  releaseExpiredHolds()
+  next()
+})
+
 // GET all reservations
 router.get('/', (_req, res) => {
-  res.status(200).json(reservations)
+  res.status(200).json(reservations.map(present))
 })
 
 // GET reservation by ID
@@ -108,12 +147,16 @@ router.get('/:id', (req, res) => {
   if (!reservation) {
     return res.status(404).json({ error: 'Reservation not found' })
   }
-  res.status(200).json(reservation)
+  res.status(200).json(present(reservation))
 })
 
-// POST create a reservation
+// POST hold a locker: always created as PENDING_PAYMENT, held for 15 minutes
 router.post('/', (req, res) => {
-  const candidate = { status: 'HELD', ...req.body }
+  const candidate = {
+    ...req.body,
+    status: 'PENDING_PAYMENT',
+    hold_expires_at: holdUntil(Date.now())
+  }
   const error = validate(candidate)
   if (error) {
     return res.status(400).json({ error })
@@ -124,7 +167,7 @@ router.post('/', (req, res) => {
     return res.status(409).json({ error: 'Locker already reserved for this period' })
   }
   reservations.push(reservation)
-  res.status(201).json(reservation)
+  res.status(201).json(present(reservation))
 })
 
 // PUT update a reservation (fields not sent are kept)
@@ -133,7 +176,15 @@ router.put('/:id', (req, res) => {
   if (index === -1) {
     return res.status(404).json({ error: 'Reservation not found' })
   }
-  const candidate = { ...reservations[index], ...req.body, id: reservations[index].id }
+  const current = reservations[index]
+  if (current.status === 'EXPIRED') {
+    return res.status(409).json({ error: 'Hold expired: the locker has been released, create a new booking' })
+  }
+  // The hold cannot be extended or restarted from the client
+  const candidate = { ...current, ...req.body, id: current.id, hold_expires_at: current.hold_expires_at }
+  if (candidate.status === 'PENDING_PAYMENT' && current.status !== 'PENDING_PAYMENT') {
+    return res.status(400).json({ error: 'A reservation cannot go back to PENDING_PAYMENT' })
+  }
   const error = validate(candidate)
   if (error) {
     return res.status(400).json({ error })
@@ -143,7 +194,7 @@ router.put('/:id', (req, res) => {
     return res.status(409).json({ error: 'Locker already reserved for this period' })
   }
   reservations[index] = updated
-  res.status(200).json(updated)
+  res.status(200).json(present(updated))
 })
 
 // DELETE a reservation
