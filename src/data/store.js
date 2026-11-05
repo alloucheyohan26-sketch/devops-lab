@@ -16,7 +16,10 @@ export const patients = [
   { id: 2, name: 'John', age: 45 }
 ]
 
-export const appointments = []
+export const appointments = [
+  { id: 1, doctor: 'Dr. Sarah Lee', patient: 'Alice', date: '2026-11-15' },
+  { id: 2, doctor: 'Dr. Amir Khan', patient: 'John', date: '2026-11-16' }
+]
 
 // Next free id = highest existing id + 1 (safer than array.length + 1)
 export const nextId = (collection) =>
