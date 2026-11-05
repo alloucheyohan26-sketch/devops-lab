@@ -11,9 +11,13 @@
  * PUT    /api/management/:id  → update (partial body accepted)
  * DELETE /api/management/:id  → delete (204)
  *
- * Rule: one management profile per user (409 if the user_id is already used).
+ * Rules:
+ *  - one management profile per user (409 if the user_id is already used)
+ *  - POST, PUT and DELETE are protected: header "X-User-Role: Management"
+ *    is required (401 without a role, 403 for any other role)
  */
 import express from 'express'
+import { requireRole } from '../../utils/requireRole.js'
 
 const router = express.Router()
 
@@ -51,6 +55,9 @@ const userAlreadyManagement = (member) =>
 
 const findIndexById = (id) => management.findIndex((m) => m.id === Number(id))
 
+// Only management staff can change management profiles
+const onlyManagement = requireRole('Management')
+
 // GET all management staff
 router.get('/', (_req, res) => {
   res.status(200).json(management)
@@ -66,7 +73,7 @@ router.get('/:id', (req, res) => {
 })
 
 // POST create a management member
-router.post('/', (req, res) => {
+router.post('/', onlyManagement, (req, res) => {
   const error = validate(req.body)
   if (error) {
     return res.status(400).json({ error })
@@ -81,7 +88,7 @@ router.post('/', (req, res) => {
 })
 
 // PUT update a management member (fields not sent are kept)
-router.put('/:id', (req, res) => {
+router.put('/:id', onlyManagement, (req, res) => {
   const index = findIndexById(req.params.id)
   if (index === -1) {
     return res.status(404).json({ error: 'Management member not found' })
@@ -100,7 +107,7 @@ router.put('/:id', (req, res) => {
 })
 
 // DELETE a management member
-router.delete('/:id', (req, res) => {
+router.delete('/:id', onlyManagement, (req, res) => {
   const before = management.length
   management = management.filter((m) => m.id !== Number(req.params.id))
   if (management.length === before) {
