@@ -17,6 +17,7 @@ import usersRouter from './routes/auto/users.route.js'
 import notificationsRouter from './routes/auto/notifications.route.js'
 import appointmentsRouter from './routes/auto/appointments.route.js'
 import reservationsRouter from './routes/auto/reservations.route.js'
+import managementRouter from './routes/auto/management.route.js'
 
 const app = express()
 
@@ -38,6 +39,7 @@ app.use('/api/metrics', metricsRouter)
 app.use('/api/users', usersRouter)
 app.use('/api/notifications', notificationsRouter)
 app.use('/api/reservations', reservationsRouter)
+app.use('/api/management', managementRouter)
 
 // Global error middleware last
 app.use(errorHandler)
