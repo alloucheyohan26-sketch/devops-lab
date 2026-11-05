@@ -15,6 +15,7 @@ import patientsRouter from './routes/auto/patients.route.js'
 import metricsRouter from './routes/auto/metrics.route.js'
 import usersRouter from './routes/auto/users.route.js'
 import notificationsRouter from './routes/auto/notifications.route.js'
+import appointmentsRouter from './routes/auto/appointments.route.js'
 
 const app = express()
 
@@ -31,6 +32,7 @@ app.use('/', infoRouter)
 app.use('/', boomRouter)
 app.use('/api/doctors', doctorsRouter)
 app.use('/api/patients', patientsRouter)
+app.use('/api/appointments', appointmentsRouter)
 app.use('/api/metrics', metricsRouter)
 app.use('/api/users', usersRouter)
 app.use('/api/notifications', notificationsRouter)

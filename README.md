@@ -35,6 +35,8 @@ Open `coverage/index.html` for a visual coverage report (locally).
 - `GET /api/patients` – list all patients (optional filter `?minAge=40`)
 - `GET /api/patients/:id` – one patient (404 if unknown)
 - `POST /api/patients` – add a patient `{ "name": "Marie", "age": 29 }` → 201 (400 if a field is missing or invalid)
+- `GET /api/appointments` – list all appointments
+- `POST /api/appointments` – schedule a visit `{ "doctor": "Dr. Julie", "patient": "Alice", "date": "2026-12-01" }` → 201 (400 if a field is missing)
 
 ### Healthcare data (Lab 5)
 
